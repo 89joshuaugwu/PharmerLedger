@@ -34,7 +34,7 @@ export function PrescriptionFulfillView({ prescription, patient, stockChecks, on
   async function handleFulfill() {
     setFulfilling(true);
     try {
-      const res = await fetch(`/api/prescriptions/${prescription.id}/fulfill`, { method: "POST" });
+      const res = await authedFetch(`/api/prescriptions/${prescription.id}/fulfill`, { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Fulfillment failed.");
 
