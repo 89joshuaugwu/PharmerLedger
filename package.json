@@ -1,0 +1,38 @@
+{
+  "name": "pharmaledger",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "next": "16.2.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "typescript": "^5.7.0",
+    "firebase": "^11.2.0",
+    "firebase-admin": "^13.1.0",
+    "jspdf": "^2.5.2",
+    "jspdf-autotable": "^3.8.4",
+    "cloudinary": "^2.5.1",
+    "framer-motion": "^11.15.0",
+    "lucide-react": "^0.469.0",
+    "react-hot-toast": "^2.5.1",
+    "date-fns": "^4.1.0",
+    "recharts": "^2.15.0",
+    "papaparse": "^5.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/papaparse": "^5.3.15",
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "eslint": "^9.17.0",
+    "eslint-config-next": "16.2.0"
+  }
+}

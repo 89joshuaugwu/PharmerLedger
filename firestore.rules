@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function getRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    function isActive() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.active == true;
+    }
+
+    match /users/{uid} {
+      allow read: if request.auth != null && isActive();
+      allow write: if request.auth != null && getRole() == "admin";
+    }
+
+    match /drugs/{drugId} {
+      allow read: if request.auth != null && isActive();
+      allow write: if request.auth != null && isActive() && getRole() == "admin";
+
+      match /batches/{batchId} {
+        allow read: if request.auth != null && isActive();
+        // Attendants need write access here ONLY via the FEFO transaction during
+        // sales/fulfillment — enforced via /api/sales/checkout and
+        // /api/prescriptions/[id]/fulfill using firebase-admin (which bypasses
+        // these client rules entirely), NOT via direct client writes. If you
+        // ever see a client-side updateDoc() touching this subcollection,
+        // that is a bug — push back on it.
+        allow write: if request.auth != null && isActive() && getRole() == "admin";
+      }
+    }
+
+    match /patients/{patientId} {
+      allow read, write: if request.auth != null && isActive();
+    }
+
+    match /prescriptions/{prescriptionId} {
+      allow read, write: if request.auth != null && isActive();
+    }
+
+    match /sales/{saleId} {
+      allow read: if request.auth != null && isActive();
+      allow create: if request.auth != null && isActive();
+      allow update, delete: if false; // sales records are immutable once created
+    }
+
+    match /notifications/{uid}/items/{notifId} {
+      allow read, update: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null; // written by server actions
+    }
+
+    // App-wide alert threshold defaults (Phase 7 Settings page) — admin only.
+    match /settings/{docId} {
+      allow read: if request.auth != null && isActive();
+      allow write: if request.auth != null && isActive() && getRole() == "admin";
+    }
+  }
+}

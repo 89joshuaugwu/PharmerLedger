@@ -1,0 +1,7 @@
+{
+  "//": "PharmaLedger does NOT use the Firebase Realtime Database — all data lives in Firestore (see CONTEXT.md Section 2). This ruleset exists only because the Firebase project has an RTDB instance provisioned by default. It is locked down completely: no reads, no writes, from anyone, ever. If a future phase intentionally adopts RTDB for something, replace this file deliberately — don't loosen it by accident.",
+  "rules": {
+    ".read": false,
+    ".write": false
+  }
+}
