@@ -32,10 +32,13 @@ function LoginForm() {
   return (
     <div className="flex min-h-[calc(100vh-140px)] items-center justify-center px-4">
       <Card className="w-full max-w-sm">
-        <h1 className="mb-1 text-xl font-bold text-text-primary">Staff Login</h1>
-        <p className="mb-6 text-sm text-text-secondary">
-          Accounts are provisioned by your administrator — there is no self-signup.
-        </p>
+        <div className="mb-6 flex flex-col items-center text-center">
+          <img src="/logo.svg" alt="PharmaLedger Logo" className="mb-3 h-12 w-12" />
+          <h1 className="text-xl font-bold text-text-primary">Staff Login</h1>
+          <p className="mt-1 text-sm text-text-secondary">
+            Accounts are provisioned by your administrator — there is no self-signup.
+          </p>
+        </div>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Input
             label="Email"

@@ -5,8 +5,9 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-border bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <Link href="/" className="text-lg font-bold text-primary">
-            PharmaLedger
+          <Link href="/" className="flex items-center gap-2 text-lg font-bold text-primary">
+            <img src="/logo.svg" alt="PharmaLedger Logo" className="h-8 w-8" />
+            <span>PharmaLedger</span>
           </Link>
         </div>
       </header>

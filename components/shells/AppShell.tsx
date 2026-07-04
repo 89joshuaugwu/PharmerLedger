@@ -57,8 +57,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Desktop sidebar — always visible, 240px fixed */}
       <aside className="hidden md:flex md:w-60 md:shrink-0 md:flex-col md:border-r md:border-border md:bg-white">
         <div className="px-5 py-5">
-          <Link href="/dashboard" className="text-lg font-bold text-primary">
-            PharmaLedger
+          <Link href="/dashboard" className="flex items-center gap-2 text-lg font-bold text-primary">
+            <img src="/logo.svg" alt="PharmaLedger Logo" className="h-8 w-8" />
+            <span>PharmaLedger</span>
           </Link>
         </div>
         <nav className="flex-1 space-y-1 px-3">
@@ -96,7 +97,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col min-h-screen">
         {/* Top bar */}
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-white px-4 py-3 md:px-6">
-          <span className="text-base font-bold text-primary md:hidden">PharmaLedger</span>
+          <span className="flex items-center gap-2 text-base font-bold text-primary md:hidden">
+            <img src="/logo.svg" alt="PharmaLedger Logo" className="h-6 w-6" />
+            <span>PharmaLedger</span>
+          </span>
           <div className="hidden md:block" />
           <div className="flex items-center gap-2">
             <AlertBell />

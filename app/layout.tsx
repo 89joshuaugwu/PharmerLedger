@@ -5,6 +5,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "PharmaLedger",
   description: "Pharmacy inventory, prescriptions, and POS — accurate stock and money tracking.",
+  icons: {
+    icon: "/logo.svg",
+    shortcut: "/logo.svg",
+    apple: "/logo.svg",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
