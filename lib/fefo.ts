@@ -26,31 +26,6 @@ export interface DeductionResult {
   shortfall: 0;
 }
 
-async function recomputeTotalsInTx(tx: Transaction, drugRef: FirebaseFirestore.DocumentReference) {
-  const batchesSnap = await tx.get(drugRef.collection("batches").where("quantity", ">", 0));
-  let totalStock = 0;
-  let nearestExpiry: number | null = null;
-
-  batchesSnap.docs.forEach((d) => {
-    const b = d.data();
-    totalStock += b.quantity as number;
-    const expiryMs = (b.expiryDate as Timestamp).toMillis();
-    if (nearestExpiry === null || expiryMs < nearestExpiry) nearestExpiry = expiryMs;
-  });
-
-  return { totalStock, nearestExpiry };
-}
-
-/**
- * Deducts `requestedQty` units of `drugId` from batches ordered earliest-
- * expiry-first. Throws InsufficientStockError (aborting the transaction,
- * nothing written) if total available stock across all batches is short.
- *
- * Two attendants checking out the last units of a drug at the same POS
- * moment must not both succeed — the Firestore transaction guarantees the
- * second call re-reads fresh data and correctly fails rather than allowing
- * negative stock.
- */
 export async function deductStockFEFO(drugId: string, requestedQty: number): Promise<DeductionResult> {
   return adminDb.runTransaction(async (tx) => {
     const drugRef = adminDb.collection("drugs").doc(drugId);
@@ -63,35 +38,60 @@ export async function deductStockFEFO(drugId: string, requestedQty: number): Pro
 
     let remaining = requestedQty;
     const deductions: DeductionResult["deductions"] = [];
+    const updatesToMake: { ref: FirebaseFirestore.DocumentReference; quantity: number }[] = [];
+
+    let newTotalStock = 0;
+    let newNearestExpiry: number | null = null;
 
     for (const batchDoc of batchesSnap.docs) {
-      if (remaining <= 0) break;
       const batch = batchDoc.data();
-      const deductAmount = Math.min(batch.quantity as number, remaining);
+      const batchQty = batch.quantity as number;
+      const expiryMs = (batch.expiryDate as Timestamp).toMillis();
 
-      tx.update(batchDoc.ref, { quantity: (batch.quantity as number) - deductAmount });
-      deductions.push({
-        batchId: batchDoc.id,
-        batchNumber: batch.batchNumber as string,
-        quantityDeducted: deductAmount,
-      });
-      remaining -= deductAmount;
+      if (remaining > 0) {
+        const deductAmount = Math.min(batchQty, remaining);
+        const newQty = batchQty - deductAmount;
+
+        updatesToMake.push({ ref: batchDoc.ref, quantity: newQty });
+        deductions.push({
+          batchId: batchDoc.id,
+          batchNumber: batch.batchNumber as string,
+          quantityDeducted: deductAmount,
+        });
+        remaining -= deductAmount;
+
+        if (newQty > 0) {
+          newTotalStock += newQty;
+          if (newNearestExpiry === null || expiryMs < newNearestExpiry) {
+            newNearestExpiry = expiryMs;
+          }
+        }
+      } else {
+        if (batchQty > 0) {
+          newTotalStock += batchQty;
+          if (newNearestExpiry === null || expiryMs < newNearestExpiry) {
+            newNearestExpiry = expiryMs;
+          }
+        }
+      }
     }
 
     if (remaining > 0) {
-      // Nothing has been committed yet — Firestore transactions only apply
-      // writes if the callback resolves. Throwing here aborts everything.
       throw new InsufficientStockError(requestedQty - remaining, requestedQty);
     }
 
-    const { totalStock, nearestExpiry } = await recomputeTotalsInTx(tx, drugRef);
+    // Phase 2: Perform all writes after reads have completed
+    for (const update of updatesToMake) {
+      tx.update(update.ref, { quantity: update.quantity });
+    }
+
     tx.update(drugRef, {
-      totalStock,
-      nearestExpiry: nearestExpiry ? Timestamp.fromMillis(nearestExpiry) : null,
+      totalStock: newTotalStock,
+      nearestExpiry: newNearestExpiry ? Timestamp.fromMillis(newNearestExpiry) : null,
       updatedAt: Timestamp.now(),
     });
 
-    return { success: true, drugId, deductions, newTotalStock: totalStock, shortfall: 0 };
+    return { success: true, drugId, deductions, newTotalStock, shortfall: 0 };
   });
 }
 
