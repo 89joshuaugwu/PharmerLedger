@@ -48,6 +48,11 @@ export async function deductStockFEFO(drugId: string, requestedQty: number): Pro
       const batchQty = batch.quantity as number;
       const expiryMs = (batch.expiryDate as Timestamp).toMillis();
 
+      // Skip expired batches in all stock transactions and calculations
+      if (expiryMs <= Date.now()) {
+        continue;
+      }
+
       if (remaining > 0) {
         const deductAmount = Math.min(batchQty, remaining);
         const newQty = batchQty - deductAmount;
@@ -147,6 +152,13 @@ export async function deductStockFEFOMulti(
       for (const batchDoc of batchesSnap.docs) {
         if (remaining <= 0) break;
         const batch = batchDoc.data();
+        const expiryMs = (batch.expiryDate as Timestamp).toMillis();
+
+        // Skip expired batches
+        if (expiryMs <= Date.now()) {
+          continue;
+        }
+
         const deductAmount = Math.min(batch.quantity as number, remaining);
         deductions.push({
           batchRef: batchDoc.ref,
@@ -168,10 +180,16 @@ export async function deductStockFEFOMulti(
       let newNearestExpiry: number | null = null;
       batchesSnap.docs.forEach((d) => {
         const b = d.data();
+        const expiryMs = (b.expiryDate as Timestamp).toMillis();
+
+        // Skip expired batches
+        if (expiryMs <= Date.now()) {
+          return;
+        }
+
         const newQty = (b.quantity as number) - (deductedByBatch.get(d.id) ?? 0);
         if (newQty > 0) {
           newTotalStock += newQty;
-          const expiryMs = (b.expiryDate as Timestamp).toMillis();
           if (newNearestExpiry === null || expiryMs < newNearestExpiry) newNearestExpiry = expiryMs;
         }
       });
@@ -215,6 +233,13 @@ export async function previewFEFO(drugId: string, requestedQty: number) {
 
   batchesSnap.docs.forEach((d) => {
     const b = d.data();
+    const expiryMs = (b.expiryDate as Timestamp).toMillis();
+
+    // Skip expired batches in previews
+    if (expiryMs <= Date.now()) {
+      return;
+    }
+
     totalAvailable += b.quantity as number;
     if (remaining > 0) {
       const take = Math.min(b.quantity as number, remaining);

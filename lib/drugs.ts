@@ -72,14 +72,26 @@ export async function addBatch(drugId: string, input: NewBatchInput): Promise<vo
       query(collection(db, "drugs", drugId, "batches"), where("quantity", ">", 0))
     );
 
-    let totalStock = input.quantity;
-    let nearestExpiry: number | null = input.expiryDate;
+    let totalStock = 0;
+    let nearestExpiry: number | null = null;
+    const now = Date.now();
+
+    if (input.expiryDate > now) {
+      totalStock = input.quantity;
+      nearestExpiry = input.expiryDate;
+    }
 
     batchesSnap.docs.forEach((d) => {
       const b = d.data();
-      totalStock += b.quantity as number;
       const expiryMs = (b.expiryDate as Timestamp).toMillis();
-      if (nearestExpiry === null || expiryMs < nearestExpiry) nearestExpiry = expiryMs;
+      if (expiryMs <= now) {
+        return; // Skip expired batch in total calculations
+      }
+
+      totalStock += b.quantity as number;
+      if (nearestExpiry === null || expiryMs < nearestExpiry) {
+        nearestExpiry = expiryMs;
+      }
     });
 
     tx.update(drugRef, {
